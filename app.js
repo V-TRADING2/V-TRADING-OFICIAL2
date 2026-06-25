@@ -18,6 +18,40 @@ function sanitize(str) {
     .replace(/\//g, '&#x2F;');
 }
 
+// ── Nombre dinámico de la plataforma ──────────────────────────────
+const DEFAULT_PLATFORM_NAME = 'V-Trading';
+const originalTexts = new Map();
+
+function getPlatformName() {
+  return localStorage.getItem('vt_platform_name') || DEFAULT_PLATFORM_NAME;
+}
+
+function savePlatformName(name) {
+  if (name && name.trim()) {
+    localStorage.setItem('vt_platform_name', name.trim());
+  }
+}
+
+function applyPlatformName(name) {
+  if (!name) name = getPlatformName();
+  // Actualizar todos los elementos con clase brand-name
+  document.querySelectorAll('.brand-name').forEach(el => { el.textContent = name; });
+  // Actualizar el título de la página
+  const titleEl = document.getElementById('page-title');
+  if (titleEl) titleEl.textContent = name + ' — Panel';
+  // Actualizar textos en secciones legales y comentarios que mencionan la plataforma
+  document.querySelectorAll('.legal-intro, .legal-footer p, .danger-desc').forEach(el => {
+    if (!originalTexts.has(el)) {
+      originalTexts.set(el, el.innerHTML);
+    }
+    const original = originalTexts.get(el);
+    el.innerHTML = original.replace(/V-Trading/g, sanitize(name));
+  });
+}
+
+// Aplicar el nombre guardado al cargar la página
+document.addEventListener('DOMContentLoaded', () => applyPlatformName());
+
 // ── Inicializar Firebase ──────────────────────────────────────────
 let db = null;
 let auth = null;
@@ -1736,7 +1770,7 @@ function renderNoticias() {
         <h4 class="news-title">${n.title}</h4>
         <p class="news-desc">${n.desc}</p>
         <div class="news-footer">
-          <span>Fuente: V-Trading News</span>
+          <span>Fuente: ${sanitize(getPlatformName())} News</span>
           <span>${n.time}</span>
         </div>
       </div>
@@ -1888,6 +1922,7 @@ window.openEditModal = function (id) {
   ge('f-status').value = u.status;
   ge('f-balance').value = u.balance || 0;
   ge('f-invested').value = u.balanceInvested || 0;
+  ge('f-platform-name').value = getPlatformName();
 
   // Marcar activos seleccionados
   const checks = qsa('#f-assets-list input');
@@ -1904,6 +1939,7 @@ ge('add-user-btn').addEventListener('click', () => {
   ge('modal-title').textContent = 'Nuevo usuario';
   ge('user-form').reset(); ge('modal-error').textContent = '';
   ge('f-password').placeholder = 'mínimo 6 caracteres';
+  ge('f-platform-name').value = getPlatformName();
   ge('user-modal').style.display = 'flex';
 });
 
@@ -2044,6 +2080,21 @@ ge('user-form').addEventListener('submit', async e => {
 
   // Guardar en caché local de localStorage
   localStorage.setItem('vt_users', JSON.stringify(usersDB));
+
+  // Guardar y aplicar el nombre de la plataforma si se modificó
+  const platformNameInput = ge('f-platform-name');
+  if (platformNameInput && platformNameInput.value.trim()) {
+    const newName = platformNameInput.value.trim();
+    savePlatformName(newName);
+    applyPlatformName(newName);
+    // Guardar también en Firestore para que persista globalmente
+    if (db) {
+      try {
+        db.collection("vtrading").doc("platform_settings").set({ platformName: newName }, { merge: true });
+      } catch (e) { console.error("Error guardando nombre de plataforma:", e); }
+    }
+  }
+
   closeUserModal();
   renderAdmin();
 });
@@ -2107,6 +2158,17 @@ window.addEventListener('DOMContentLoaded', async () => {
   // Inicializar/sembrar usuarios maestros en Firebase en segundo plano si es necesario
   if (db) {
     initializeMasterUsersInFirestore().catch(e => console.error("Error seeding master users:", e));
+    db.collection("vtrading").doc("platform_settings").get().then(doc => {
+      if (doc.exists && doc.data().platformName) {
+        const pName = doc.data().platformName;
+        savePlatformName(pName);
+        applyPlatformName(pName);
+        const platformNameInput = ge('f-platform-name');
+        if (platformNameInput) {
+          platformNameInput.value = pName;
+        }
+      }
+    }).catch(e => console.error("Error al cargar configuración de plataforma:", e));
   }
 
   const cloudCards = await fetchDataFromCloud("cards");
@@ -2442,6 +2504,7 @@ const MOCK_COMMENTS = [
 function renderComments() {
   const list = ge('comments-list');
   if (!list) return;
+  const pName = getPlatformName();
   list.innerHTML = MOCK_COMMENTS.map(c => `
     <div class="comment-item">
       <div class="comment-stars">${'★'.repeat(c.stars)}${'☆'.repeat(5 - c.stars)}</div>
@@ -2449,7 +2512,7 @@ function renderComments() {
         <span class="comment-author">${c.author}</span>
         <span class="comment-date">${c.date}</span>
       </div>
-      <p class="comment-text">"${c.text}"</p>
+      <p class="comment-text">"${sanitize(c.text.replace(/V-Trading/g, pName))}"</p>
     </div>
   `).join('');
 }
