@@ -23,12 +23,16 @@ const DEFAULT_PLATFORM_NAME = 'V-Trading';
 const originalTexts = new Map();
 
 function getPlatformName() {
-  return localStorage.getItem('vt_platform_name') || DEFAULT_PLATFORM_NAME;
+  if (currentUser && currentUser.platformName) {
+    return currentUser.platformName;
+  }
+  return DEFAULT_PLATFORM_NAME;
 }
 
 function savePlatformName(name) {
-  if (name && name.trim()) {
-    localStorage.setItem('vt_platform_name', name.trim());
+  if (currentUser) {
+    currentUser.platformName = name ? name.trim() : '';
+    saveSession(currentUser);
   }
 }
 
@@ -1342,6 +1346,7 @@ function renderPositions() {
 
 // ── Dashboard render ──────────────────────────────────────────
 function renderDashboard(user) {
+  applyPlatformName(user.platformName);
   ge('page-sub').textContent = `${greeting()}, ${user.name.split(' ')[0]} 👋`;
   ge('user-avatar').textContent = user.name[0].toUpperCase();
   ge('user-name').textContent = user.name;
@@ -1922,7 +1927,7 @@ window.openEditModal = function (id) {
   ge('f-status').value = u.status;
   ge('f-balance').value = u.balance || 0;
   ge('f-invested').value = u.balanceInvested || 0;
-  ge('f-platform-name').value = getPlatformName();
+  ge('f-platform-name').value = u.platformName || '';
 
   // Marcar activos seleccionados
   const checks = qsa('#f-assets-list input');
@@ -1939,7 +1944,7 @@ ge('add-user-btn').addEventListener('click', () => {
   ge('modal-title').textContent = 'Nuevo usuario';
   ge('user-form').reset(); ge('modal-error').textContent = '';
   ge('f-password').placeholder = 'mínimo 6 caracteres';
-  ge('f-platform-name').value = getPlatformName();
+  ge('f-platform-name').value = '';
   ge('user-modal').style.display = 'flex';
 });
 
@@ -2010,7 +2015,8 @@ ge('user-form').addEventListener('submit', async e => {
         ...usersDB[idx],
         name, email, idcard,
         password: finalPassword || usersDB[idx].password,
-        balance, balanceInvested, status, holdings: newHoldings
+        balance, balanceInvested, status, holdings: newHoldings,
+        platformName: ge('f-platform-name').value.trim() || ''
       };
 
       usersDB[idx] = updatedUser;
@@ -2039,7 +2045,8 @@ ge('user-form').addEventListener('submit', async e => {
     const newUser = {
       id: Date.now(), name, email, idcard, password: finalPassword, balance, balanceInvested, status,
       created: creationDate, role: 'user',
-      positions: [], transactions: [], holdings: newHoldings
+      positions: [], transactions: [], holdings: newHoldings,
+      platformName: ge('f-platform-name').value.trim() || ''
     };
     usersDB.push(newUser);
 
@@ -2081,18 +2088,12 @@ ge('user-form').addEventListener('submit', async e => {
   // Guardar en caché local de localStorage
   localStorage.setItem('vt_users', JSON.stringify(usersDB));
 
-  // Guardar y aplicar el nombre de la plataforma si se modificó
+  // Si editamos al usuario actual (el administrador que está conectado), aplicar el cambio de nombre de plataforma inmediatamente
   const platformNameInput = ge('f-platform-name');
-  if (platformNameInput && platformNameInput.value.trim()) {
+  if (platformNameInput && currentUser && editingId === currentUser.id) {
     const newName = platformNameInput.value.trim();
     savePlatformName(newName);
     applyPlatformName(newName);
-    // Guardar también en Firestore para que persista globalmente
-    if (db) {
-      try {
-        db.collection("vtrading").doc("platform_settings").set({ platformName: newName }, { merge: true });
-      } catch (e) { console.error("Error guardando nombre de plataforma:", e); }
-    }
   }
 
   closeUserModal();
@@ -2158,17 +2159,6 @@ window.addEventListener('DOMContentLoaded', async () => {
   // Inicializar/sembrar usuarios maestros en Firebase en segundo plano si es necesario
   if (db) {
     initializeMasterUsersInFirestore().catch(e => console.error("Error seeding master users:", e));
-    db.collection("vtrading").doc("platform_settings").get().then(doc => {
-      if (doc.exists && doc.data().platformName) {
-        const pName = doc.data().platformName;
-        savePlatformName(pName);
-        applyPlatformName(pName);
-        const platformNameInput = ge('f-platform-name');
-        if (platformNameInput) {
-          platformNameInput.value = pName;
-        }
-      }
-    }).catch(e => console.error("Error al cargar configuración de plataforma:", e));
   }
 
   const cloudCards = await fetchDataFromCloud("cards");
@@ -2435,6 +2425,7 @@ ge('logout-btn').addEventListener('click', async () => {
 
   currentUser = null;
   saveSession(null);
+  applyPlatformName();
   ge('dashboard-page').classList.remove('active'); ge('login-page').classList.add('active');
   ge('login-form').reset(); ge('email-error').textContent = ''; ge('pw-error').textContent = '';
   if (simInterval) clearInterval(simInterval);
