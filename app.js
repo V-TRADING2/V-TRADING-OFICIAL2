@@ -18,6 +18,47 @@ function sanitize(str) {
     .replace(/\//g, '&#x2F;');
 }
 
+// ── Control de Tema (Oscuro / Claro) ──────────────────────────────
+const DEFAULT_THEME = 'dark';
+
+function initTheme() {
+  const savedTheme = localStorage.getItem('vt_theme') || DEFAULT_THEME;
+  if (savedTheme === 'light') {
+    document.body.classList.add('light-theme');
+  } else {
+    document.body.classList.remove('light-theme');
+  }
+}
+
+function toggleTheme() {
+  const isLight = document.body.classList.toggle('light-theme');
+  localStorage.setItem('vt_theme', isLight ? 'light' : 'dark');
+  updateThemeIcons();
+}
+
+function updateThemeIcons() {
+  const isLight = document.body.classList.contains('light-theme');
+  
+  // Login theme icon
+  const loginSun = document.getElementById('login-theme-sun');
+  const loginMoon = document.getElementById('login-theme-moon');
+  if (loginSun && loginMoon) {
+    loginSun.style.display = isLight ? 'none' : 'block';
+    loginMoon.style.display = isLight ? 'block' : 'none';
+  }
+  
+  // Dashboard theme icon
+  const dashSun = document.getElementById('dash-theme-sun');
+  const dashMoon = document.getElementById('dash-theme-moon');
+  if (dashSun && dashMoon) {
+    dashSun.style.display = isLight ? 'none' : 'block';
+    dashMoon.style.display = isLight ? 'block' : 'none';
+  }
+}
+
+// Inicializar el tema de inmediato para evitar destellos blancos
+initTheme();
+
 // ── Nombre dinámico de la plataforma ──────────────────────────────
 const DEFAULT_PLATFORM_NAME = 'Portal de Inversión';
 const originalTexts = new Map();
@@ -2211,6 +2252,15 @@ window.addEventListener('DOMContentLoaded', async () => {
     switchSection('section-dashboard');
     startSimulation();
   }
+
+  // Configurar listeners de botones de tema y actualizar estado inicial de los iconos
+  const loginThemeBtn = ge('login-theme-toggle-btn');
+  if (loginThemeBtn) loginThemeBtn.addEventListener('click', toggleTheme);
+
+  const dashThemeBtn = ge('dash-theme-toggle-btn');
+  if (dashThemeBtn) dashThemeBtn.addEventListener('click', toggleTheme);
+
+  updateThemeIcons();
 });
 
 ge('login-form').addEventListener('submit', async e => {
