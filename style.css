@@ -34,7 +34,7 @@ body.light-theme {
   --green: #059669;
   --red: #dc2626;
   --text: #1f2937;
-  --muted: #6b7280;
+  --muted: #4b5563;
   --border: rgba(0, 0, 0, 0.08);
   --shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
 }
@@ -48,6 +48,11 @@ body.light-theme input,
 body.light-theme select {
   background: rgba(255, 255, 255, 0.85);
   border: 1px solid rgba(0, 0, 0, 0.12);
+  color: var(--text);
+}
+
+body.light-theme input::placeholder {
+  color: #8892b0;
 }
 
 body.light-theme .login-bg {
@@ -67,6 +72,72 @@ body.light-theme .login-brand-name {
   background: linear-gradient(135deg, #0f172a 30%, #4b5563);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+}
+
+body.light-theme .login-title {
+  background: linear-gradient(90deg, #1e293b, var(--accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+body.light-theme .login-sub,
+body.light-theme .checkbox-wrap {
+  color: #374151;
+}
+
+body.light-theme .checkmark {
+  border: 1.5px solid rgba(0, 0, 0, 0.2);
+  background: #ffffff;
+}
+
+body.light-theme .login-disclaimer {
+  color: #4b5563;
+}
+
+body.light-theme .login-tips-area {
+  background: rgba(108, 99, 255, 0.03);
+  border: 1px solid rgba(108, 99, 255, 0.08);
+}
+
+body.light-theme .login-tips-area li {
+  color: #374151;
+}
+
+body.light-theme .tp-inputs input,
+body.light-theme .tp-inputs select,
+body.light-theme .glass-input,
+body.light-theme .alert-menu input {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+body.light-theme .tp-inputs select option {
+  background: var(--bg2);
+  color: var(--text);
+}
+
+body.light-theme .comments-wall h3,
+body.light-theme .rs-val,
+body.light-theme .live-price,
+body.light-theme .feed-content strong,
+body.light-theme .news-title {
+  color: var(--text);
+}
+
+body.light-theme .news-tag {
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--text);
+}
+
+body.light-theme .btn-close-pos {
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--text);
+}
+
+body.light-theme .btn-close-pos:hover {
+  background: var(--red);
+  color: #fff;
 }
 
 body.light-theme .nav-item:hover {

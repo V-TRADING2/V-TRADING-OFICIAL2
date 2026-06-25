@@ -34,6 +34,14 @@ function toggleTheme() {
   const isLight = document.body.classList.toggle('light-theme');
   localStorage.setItem('vt_theme', isLight ? 'light' : 'dark');
   updateThemeIcons();
+
+  // Re-renderizar gráficos para que adopten los colores del nuevo tema de inmediato
+  if (typeof initChart === 'function' && typeof priceHistory !== 'undefined' && priceHistory && priceHistory.length > 0) {
+    try { initChart(priceHistory); } catch (e) { console.error("Error updating main chart theme:", e); }
+  }
+  if (typeof renderCartera === 'function') {
+    try { renderCartera(); } catch (e) { console.error("Error updating donut chart theme:", e); }
+  }
 }
 
 function updateThemeIcons() {
@@ -669,7 +677,7 @@ function initChart(dataArray) {
     let path = `M ${rsiPts[0].x},${rsiPts[0].y}`;
     rsiPts.forEach((p, i) => { if (i > 0) path += ` L ${p.x},${p.y}`; });
 
-    rsiSVG += `<rect x="${pad.left}" y="${yStart}" width="${innerW}" height="${rsiH}" fill="rgba(255,255,255,0.02)" rx="4" />`;
+    rsiSVG += `<rect x="${pad.left}" y="${yStart}" width="${innerW}" height="${rsiH}" fill="var(--glass)" rx="4" />`;
     rsiSVG += `<line x1="${pad.left}" y1="${getRsiY(70)}" x2="${width - pad.right}" y2="${getRsiY(70)}" stroke="rgba(244,63,94,0.3)" stroke-dasharray="2" />`;
     rsiSVG += `<line x1="${pad.left}" y1="${getRsiY(30)}" x2="${width - pad.right}" y2="${getRsiY(30)}" stroke="rgba(34,211,164,0.3)" stroke-dasharray="2" />`;
     rsiSVG += `<path d="${path}" fill="none" stroke="#f472b6" stroke-width="1.5" />`;
@@ -711,7 +719,7 @@ function initChart(dataArray) {
       histogram += `<line x1="${getX(i)}" y1="${midY}" x2="${getX(i)}" y2="${getMacdY(h)}" stroke="${h >= 0 ? 'var(--green)' : 'var(--red)'}" opacity="0.5" />`;
     });
 
-    macdSVG += `<rect x="${pad.left}" y="${yStart}" width="${innerW}" height="${macdH}" fill="rgba(255,255,255,0.02)" rx="4" />`;
+    macdSVG += `<rect x="${pad.left}" y="${yStart}" width="${innerW}" height="${macdH}" fill="var(--glass)" rx="4" />`;
     macdSVG += histogram;
     macdSVG += `<path d="${macdPath}" fill="none" stroke="#60a5fa" stroke-width="1.2" />`;
     macdSVG += `<path d="${signalPath}" fill="none" stroke="#f59e0b" stroke-width="1.2" />`;
@@ -723,7 +731,7 @@ function initChart(dataArray) {
   for (let i = 0; i <= 4; i++) {
     const y = pad.top + (innerH / 4) * i;
     const val = max - (rangeY / 4) * i;
-    gridLines += `<line x1="${pad.left}" y1="${y}" x2="${width - pad.right}" y2="${y}" stroke="rgba(255,255,255,0.05)" stroke-dasharray="4" />`;
+    gridLines += `<line x1="${pad.left}" y1="${y}" x2="${width - pad.right}" y2="${y}" stroke="var(--border)" stroke-dasharray="4" />`;
     const formatVal = val < 10 ? val.toFixed(4) : val > 1000 ? (val / 1000).toFixed(2) + 'k' : val.toFixed(1);
     gridLines += `<text x="${pad.left - 10}" y="${y + 4}" fill="#94a3b8" font-size="11" text-anchor="end">$${formatVal}</text>`;
   }
@@ -1578,11 +1586,13 @@ function renderCartera() {
     const sweep = (d.val / chartTotal) * Math.PI * 2;
     ctx.beginPath(); ctx.moveTo(cx, cy); ctx.arc(cx, cy, R, angle, angle + sweep); ctx.closePath();
     ctx.fillStyle = d.color; ctx.fill();
-    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fillStyle = '#0b0e1a'; ctx.fill();
+    const isLight = document.body.classList.contains('light-theme');
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fillStyle = isLight ? '#ffffff' : '#0b0e1a'; ctx.fill();
     angle += sweep;
   });
 
-  ctx.fillStyle = '#e2e8f0'; ctx.font = 'bold 13px Inter,sans-serif'; ctx.textAlign = 'center';
+  const isLight = document.body.classList.contains('light-theme');
+  ctx.fillStyle = isLight ? '#1f2937' : '#e2e8f0'; ctx.font = 'bold 13px Inter,sans-serif'; ctx.textAlign = 'center';
   ctx.fillText('TOTAL', cx, cy - 6); ctx.fillText(fmt(chartTotal).replace('MX$', '$'), cx, cy + 12);
 
   ge('donut-legend').innerHTML = dataForChart.map(d => {
