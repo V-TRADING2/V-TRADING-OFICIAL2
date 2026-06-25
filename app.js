@@ -2259,7 +2259,7 @@ ge('login-form').addEventListener('submit', async e => {
         // Si el login en Auth falla, verificamos si es un usuario que existe en Firestore
         // y su contraseña local coincide. Si es así, migramos su cuenta a Firebase Auth al vuelo.
         const code = authError.code;
-        if (code === 'auth/user-not-found' || code === 'auth/invalid-credential' || code === 'auth/wrong-password') {
+        if (code === 'auth/user-not-found' || code === 'auth/invalid-credential' || code === 'auth/invalid-login-credentials' || code === 'auth/wrong-password') {
           const emailKey = email.toLowerCase().trim();
           let dbUser = null;
           if (db) {
