@@ -4,4 +4,3 @@ build
 .next
 .env
 .cache
-config.js
