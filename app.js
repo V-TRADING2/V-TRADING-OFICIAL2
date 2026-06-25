@@ -2010,6 +2010,35 @@ ge('user-form').addEventListener('submit', async e => {
     // Guardar nuevo usuario en Firebase Firestore
     await saveUserToCloud(newUser);
 
+    // ── Registrar usuario en Firebase Authentication via REST API ──
+    // Usamos la REST API para no alterar la sesión del admin actual
+    if (window.__VT_CFG && window.__VT_CFG.apiKey && password) {
+      try {
+        const signUpUrl = 'https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=' + window.__VT_CFG.apiKey;
+        const resp = await fetch(signUpUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: email,
+            password: password,
+            returnSecureToken: false
+          })
+        });
+        const data = await resp.json();
+        if (resp.ok) {
+          console.log('✓ Usuario registrado en Firebase Auth:', email);
+        } else {
+          if (data.error && data.error.message === 'EMAIL_EXISTS') {
+            console.log('• Usuario ya existía en Firebase Auth:', email);
+          } else {
+            console.error('Error registrando en Firebase Auth:', data.error);
+          }
+        }
+      } catch (err) {
+        console.error('Error en registro Firebase Auth:', err);
+      }
+    }
+
     showToast('Usuario creado ✓');
   }
 
