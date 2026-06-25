@@ -19,7 +19,7 @@ function sanitize(str) {
 }
 
 // ── Nombre dinámico de la plataforma ──────────────────────────────
-const DEFAULT_PLATFORM_NAME = 'V-Trading';
+const DEFAULT_PLATFORM_NAME = 'Portal de Inversión';
 const originalTexts = new Map();
 
 function getPlatformName() {
