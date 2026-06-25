@@ -2295,7 +2295,7 @@ ge('login-form').addEventListener('submit', async e => {
         } else if (code === 'auth/too-many-requests') {
           ge('email-error').textContent = 'Demasiados intentos. Espera unos minutos.';
         } else {
-          ge('email-error').textContent = 'Error al iniciar sesión. Intenta de nuevo.';
+          ge('email-error').textContent = 'Error: ' + authError.message + ' (' + authError.code + ')';
           console.error('Firebase Auth error:', authError);
         }
         return;
